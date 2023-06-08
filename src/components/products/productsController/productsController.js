@@ -1,7 +1,6 @@
-const products = require("../../../products.json");
-const { ProductManager } = require("../../../productManager");
-const productManager = new ProductManager();
-let database = require("../../../products.json");
+//const { ProductManager } = require("../../../productManager");
+//const productManager = new ProductManager();
+let database = require("../../../../products.json");
 
 class Product {
   async get(req, res) {
@@ -17,9 +16,9 @@ class Product {
   }
 
   async getId(req, res) {
-    const productId = req.params.id;
+    const productId = req.params.pid;
     const products = await database;
-    const existProduct = products.find((prod) => prod.id == productId);
+    const existProduct = products.find((prod) => prod.id === Number(productId));
     const response = existProduct
       ? existProduct
       : {
@@ -31,19 +30,17 @@ class Product {
   async create(req, res) {
     const { title, description, code, price, stock, category, thumbnails } =
       req.body;
-    const products = await require("../../../products.json");
-    const automaticId = products.length + 1;
+    const automaticId = database.length + 1;
 
-    const existCode = products.find((prod) => prod.code === code);
+    const existCode = database.find((prod) => prod.code === code);
     if (existCode) {
       return res
         .status(404)
         .send(`Error, el código ${code} coincide con un código ya existente`);
     }
-
-    const existId = products.find((prod) => prod.id === automaticId);
+    const existId = database.find((prod) => prod.id === automaticId);
     if (existId) {
-      return console.log(
+      console.log(
         `El id ${automaticId}, ya se encuentra en nuestra base de datos`
       );
     }
@@ -64,22 +61,49 @@ class Product {
         category,
         thumbnails,
       };
-      res.send(newProduct);
-      products.push(newProduct);
+
+      database.push(newProduct);
       res
-        .status(201)
+        .status(200)
         .json({ message: "Producto creado exitosamente", product: newProduct });
     }
-    res.json(products);
   }
 
   async update(req, res) {
-    const productId = req.params.id;
-    const product = req.body;
+    try {
+      let pid = parseInt(req.params.pid);
+      let obj = req.body;
 
-    const producto = await productManager.updateProduct(productId, product);
-    res.send(producto);
+      const findIndex = database.findIndex((product) => product.id === pid);
+      if (findIndex === -1) {
+        return res.status(404).send({
+          message: `El producto con el id ${pid} no se encuentra en nuestra base de datos`,
+        });
+      }
+      database[findIndex] = { ...database[findIndex], ...obj };
+
+      res.status(200).json({
+        message: `Se ha actualizado el producto con éxito`,
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async delete(req, res) {
+    let pid = req.params.pid;
+    const productIndex = database.findIndex((prod) => prod.id === Number(pid));
+    if (productIndex !== -1) {
+      database.splice(productIndex, 1);
+      res
+        .status(200)
+        .json({ message: `El producto con el id ${pid} fue eliminado` });
+    } else {
+      res.status(404).json({
+        message: `El producto con el id ${pid} no se encuentra en nuestra base de datos`,
+      });
+    }
   }
 }
 
-module.exports = new Product();
+module.exports = Product;

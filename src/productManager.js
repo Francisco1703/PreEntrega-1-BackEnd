@@ -11,6 +11,7 @@ class ProductManager {
 
   async addProduct(title, description, price, thumbnail, code, stock) {
     try {
+      this.products = await readProducts(this.path);
       const existCode = this.products.find((prod) => prod.code === code);
       if (existCode) {
         console.log(
@@ -73,27 +74,15 @@ class ProductManager {
     }
   }
 
-  async updateProduct(id, fieldToUpdate, newValue) {
+  async updateProduct(id, productData) {
     try {
-      const product = this.products.find((prod) => prod.id === id);
-      if (!product) {
-        console.log("El producto no fue encontrado");
-        return;
+      const productsData = fs.readFileSync(ARCHIVO, "utf-8");
+      const products = JSON.parse(productsData);
+      const productIndex = products.findIndex((product) => product.id === id);
+      if (productIndex !== -1) {
+        Object.assign(products[productIndex], productData);
+        fs.writeFileSync(ARCHIVO, JSON.stringify(products));
       }
-
-      product[fieldToUpdate] = newValue;
-
-      fs.writeFile(
-        this.path,
-        JSON.stringify(this.products, null, 2),
-        (error) => {
-          if (error) {
-            console.log("Error al guardar los cambios en el archivo");
-          } else {
-            console.log("El producto fue actualizado correctamente");
-          }
-        }
-      );
     } catch (error) {
       console.log(error);
     }
@@ -101,6 +90,7 @@ class ProductManager {
 
   async deleteProduct(id) {
     try {
+      this.products = await readProducts(this.path);
       const index = this.products.findIndex((prod) => prod.id === id);
 
       if (index === -1) {
