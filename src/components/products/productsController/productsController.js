@@ -1,5 +1,3 @@
-//const { ProductManager } = require("../../../productManager");
-//const productManager = new ProductManager();
 let database = require("../../../../products.json");
 
 class Product {
